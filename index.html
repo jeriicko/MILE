@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mile Coffee - Premium Menu</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+  body{background:#ffffff;color:#02745d;}
+  header{position:sticky;top:0;background:#fff;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+  .categories{display:flex;overflow-x:auto;gap:10px;padding:10px;}
+  .categories button{flex:0 0 auto;padding:10px 20px;border:none;background:#eee;border-radius:20px;cursor:pointer;transition:0.3s;}
+  .categories button:hover{background:#02745d;color:#fff;}
+  .menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;padding:20px;}
+
+  /* Glassmorphism Card */
+  .card{
+    position:relative;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    cursor:pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card:hover{transform: translateY(-10px) scale(1.05);box-shadow:0 15px 35px rgba(0,0,0,0.25);}
+  .card img{width:100%;height:180px;object-fit:cover;transition: transform 0.3s ease;}
+  .card:hover img{transform: scale(1.1);}
+  .card-body{padding:15px;text-align:center;position:relative;}
+  .card-body h4{margin-bottom:5px;font-weight:bold;color:#02745d;}
+  .card-body p{font-size:14px;color:#444;}
+  .add-btn{position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);background:#02745d;color:#fff;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-weight:bold;transition: bottom 0.3s ease;}
+  .card:hover .add-btn{bottom:20px;}
+
+  .cart-btn{position:fixed;top:20px;right:20px;background:#02745d;color:#fff;padding:15px 20px;border-radius:30px;cursor:pointer;z-index:1100;}
+  .cart-btn span{margin-left:5px;}
+  .cart-badge{position:absolute;top:1px;right:1px;background:red;color:#fff;border-radius:50%;font-size:17px;padding:2px 6px;}
+  .cart-panel{position:fixed;top:0;right:-400px;width:350px;height:100%;background:#fff;box-shadow:-2px 0 5px rgba(0,0,0,0.3);transition:0.3s;padding:20px;overflow-y:auto;z-index:1200;}
+  .cart-panel.active{right:0;}
+  .cart-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:none;z-index:1100;}
+  .cart-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;}
+  .cart-item input{width:60%;font-size:12px;}
+  .total{font-weight:bold;margin-top:15px;}
+  .checkout{margin-top:20px;}
+  .checkout input{width:100%;padding:8px;margin-bottom:10px;}
+  .checkout button{width:100%;padding:10px;background:#02745d;color:#fff;border:none;cursor:pointer;border-radius:5px;}
+
+  
+  /* Modal */
+  .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000;opacity:0;transition:opacity 0.3s;}
+  .modal.show{display:flex;opacity:1;}
+  .modal-content{background:#fff;padding:20px;border-radius:15px;max-width:400px;width:90%;text-align:center;position:relative;box-shadow:0 15px 35px rgba(0,0,0,0.25);}
+  .modal-content img{width:100%;height:220px;object-fit:cover;border-radius:15px;}
+  .qty-control{display:flex;justify-content:center;align-items:center;gap:15px;margin:15px 0;}
+  .qty-control button{padding:5px 15px;}
+  .close{position:absolute;top:10px;right:15px;font-size:22px;cursor:pointer;}
+  
+
+  @keyframes bounce {0%,100%{transform:scale(1);}30%{transform:scale(1.2);}50%{transform:scale(0.9);}70%{transform:scale(1.1);}}
+  .cart-bounce {animation:bounce 0.6s ease;}
+
+  .logo { max-width: 400px; margin-bottom: 0px; }
+  .slogan { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 20px; color: #ffffff; }
+  .buttons { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .buttons button { background-color: #02745d; color: white; padding: 12px 28px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .buttons button:hover { background-color: #025845; transform: scale(1.05); }
+  #home { display:flex; justify-content:center; align-items:center; text-align:center; height:80vh; background:#fafafa; flex-direction:column; padding:20px; }
+  .landing-center { display:flex; flex-direction:column; align-items:center; gap:15px; }
+
+ #home {
+   background: url("https://iili.io/KncdNOQ.md.jpg" ) center center / cover fixed no-repeat;
+}
+
+
+  @media (max-width: 768px) {
+    .menu { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 10px; }
+    .card img { height: 120px; }
+    .card-body h4 { font-size: 16px; }
+    .card-body p { font-size: 12px; }
+    .add-btn { padding: 8px 16px; font-size: 12px; }
+    .buttons button { padding: 10px 20px; font-size: 14px; }
+    .slogan { font-size: 1.2rem; }
+  }
+
+  .card { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .card.visible { opacity: 1; transform: translateY(0); }
+ 
+  /* Tambahan untuk tombol dalam cart */
+  .cart-actions {
+    display: flex;
+    gap: 5px;
+    margin: 5px 0;
+  }
+  .cart-actions button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: none;
+    background: #02745d;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .cart-actions button:hover {
+    background: #025845;
+  }
+
+  .addon-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none;
+    align-items: center; justify-content: center; z-index: 2500;
+  }
+  .addon-modal.show { display: flex; }
+  .addon-box {
+    background: #fff; padding: 20px; border-radius: 12px;
+    width: 300px; max-height: 80vh; overflow-y: auto;
+  }
+  .addon-box h3 { margin-bottom: 15px; color: #02745d; }
+  .addon-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
+  .addon-item span { flex:1; }
+  .addon-item button {
+    padding: 2px 8px; font-size: 12px; border:none;
+    background: #02745d; color: #fff; border-radius: 4px; cursor:pointer;
+  }
+.checkout label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #02745d;
+  display: block;
+  margin: 5px 0 2px;
+}
+
+
+
+
+</style>
+</head>
+<body>
+<section id="home">
+  <div class="landing-center">
+    <img src="https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756994909258" alt="Mile Logo" class="logo" />
+    <div class="slogan">coffee - food - family</div>
+    <div class="buttons">
+      <button onclick="scrollToSection('menu')">See Menu</button>
+      <button onclick="openReservation()">Order</button>
+      
+    </div>
+  </div>
+</section>
+
+<header><div class="categories" id="categories"></div></header>
+<div class="menu" id="menu"></div>
+
+<div class="cart-btn" onclick="toggleCart()">🛒 Cart<div class="cart-badge" id="cartBadge">0</div></div>
+<div class="cart-overlay" onclick="toggleCart()"></div>
+<div class="cart-panel" id="cartPanel">
+  <h2>Your Order</h2>
+  <div id="cartItems"></div>
+  <div class="total" id="cartTotal">Total: $0.00</div>
+<div class="checkout">
+  <input type="text" id="custName" placeholder="Your Name">
+
+  <input type="number" id="tableNo" placeholder="Table No.">
+
+  <input type="number" id="pax" placeholder="Pax">
+
+  <label for="orderDate">Date</label>
+  <input type="date" id="orderDate">
+
+  <label for="orderTime">Time</label>
+  <input type="time" id="orderTime">
+
+  <button onclick="orderNow()">Order</button>
+</div>
+
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" onclick="modal.classList.remove('show')">&times;</span>
+    <img id="modalImg" src="" alt="">
+    <h3 id="modalName"></h3>
+    <p id="modalPrice"></p>
+    <p id="modalDesc"></p>
+    <div class="qty-control">
+      <button onclick="changeQty(-1)">-</button>
+      <span id="qty">1</span>
+      <button onclick="changeQty(1)">+</button>
+    </div>
+    <button onclick="addToCart()">Add to Cart</button>
+  </div>
+</div>
+<div class="addon-modal" id="addonModal" onclick="outsideAddonClose(event)">
+  <div class="addon-box">
+    <h3>Select Add-ons</h3>
+    <div id="addonList"></div>
+    <button onclick="closeAddonModal()" style="margin-top:10px;width:100%;background:#025845;color:#fff;padding:8px;border:none;border-radius:6px;cursor:pointer;">Done</button>
+  </div>
+</div>
+
+
+<script>
+  const addOns = [
+  {name:"Extra Cheese", price:2.0},
+  {name:"Bacon", price:3.0},
+  {name:"Mushroom", price:1.5},
+  {name:"Avocado", price:2.5}
+];
+
+/* === DATA MENU & CATEGORY === */
+const menuItems = [
+  {name:"MILE’S SPECIAL", price:9.9, category:"Brunch", img:"https://iili.io/KnYqxOx.md.jpg", desc:"our big breakfast is a hearty two sunny side ups on brioche toast with a grilled sausage, sauteed mushroom, hash brown, grilled tomatoes and salad on the side."},
+ {name:"EGG ROYALE", price:14.8, category:"Brunch", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"poached egg with smoked salmon, topped with our freshly made hollandaise sauce, all on a brioche bread with a side of salad"},
+ {name:"EGG BENEDICT", price:10.0, category:"Brunch", img:"https://iili.io/KnaFavj.md.jpg", desc:"poached egg with chicken ham, topped with our freshly made hollandaise sauce, all on a brioche bread with a side of salad"},
+ {name:"GOLDEN WAFFLES", price:12.9, category:"Brunch", img:"https://iili.io/KnYq8zl.md.jpg", desc:"a waffles vanilla ice cream sandwich topped with fresh strawberries and cream, drizzled with maple syrup"},
+ {name:"PANCAKE", price:8.9, category:"Brunch", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"double stacked pancakes topped with fresh blueberries and strawberries, finished with maple syrup"},
+ {name:"FRENCH TOAST", price:8.9, category:"Brunch", img:"https://iili.io/Kna3PIV.md.jpg", desc:"two slice of french toast served with fruits, sprinkled with cinnamon sugar, maple syrup and topped with cream"},
+ {name:"SCRAMBLED EGG TOAST", price:7.5, category:"Brunch", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"toasted brioche bread with scrambled eggs and a side of salad"},
+ {name:"CROQUE MADAME", price:8.9, category:"Brunch", img:"https://iili.io/KnYytrx.md.jpg", desc:"chicken ham sandwich with bechamel sauce on gruyere cheese, topped with a sunny side-up, and a side of salad"},
+ {name:"CROQUE MONSIEUR", price:7.9, category:"Brunch", img:"https://iili.io/KnYym7V.md.jpg", desc:"chicken ham sandwich with bechamel sauce on gruyere cheese, and a side of salad"},
+ {name:"SALMON CROISSANT", price:10.9, category:"Brunch", img:"https://iili.io/KnaK5oN.md.jpg", desc:"toasted croissant with smoked salmon, scrambled egg and side of salad"},
+{name:"SIGNATURE FRIES", price:10.9, category:"Appetisers", img:"https://iili.io/KnYqTxV.md.jpg", desc:"our signature fries are drizzled with freshly made mentaiko sauce"},
+ {name:"SALTED EGG FRIES", price:5.5, category:"Appetisers", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"fried fries coated with salted egg, chili and sliced onion"},
+ {name:"CALAMARI", price:7.5, category:"Appetisers", img:"https://iili.io/KnYqO5G.md.jpg", desc:"breaded calamari with tartar sauce and garlic mayo"},
+ {name:"mozzarella stick", price:7.9, category:"Appetisers", img:"https://iili.io/KnaFq2s.md.jpg", desc:"battered fried mozzarella cheese served with mariana sauce for dipping"},
+ {name:"BEEF NACHOS", price:9.9, category:"Appetisers", img:"https://iili.io/KnYqh0X.md.jpg", desc:"tortilla chips, chili con carne, white onion, capsicum, jalapeno topped with mozzarella and cheddar cheese"},
+ {name:"GARLIC BREAD", price:5.5, category:"Appetisers", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"freshly baked sliced baguette with garlic and herbs"},
+ {name:"CHICKEN WING", price:7.9, category:"Appetisers", img:"https://iili.io/Kna91j9.md.jpg", desc:"battered fried chicken wings in a flavour of your choosing * barbecue * teriyaki * buffalo*"},
+ {name:"MUSHROOM SOUP", price:9.9, category:"Soup", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+ {name:"CAESAR SALAD", price:7.9, category:"Salad", img:"https://iili.io/Kna9YYl.md.jpg", desc:"romaine lettuce, black olive, cherry tomatoes, sliced avocados topped with our freshly-made balsamic vinaigrette"},
+{name:"THE MILE STEAK", price:18.9, category:"Western", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"our signature juicy steak burger with mushroom sauce and two sides of your choosing"},
+ {name:"CLUB SANDWICH", price:12.8, category:"Western", img:"https://iili.io/KnaKLUg.md.jpg", desc:"grilled chicken sandwich with beef rasher, tomatoes, cucumber, lettuce, sliced cheese, thousand island sauce, and side of fries"},
+ {name:"CLASSIC BEEF BURGER", price:10.9, category:"Western", img:"https://iili.io/KnYq6ge.md.jpg", desc:"freshly-made beef patty, sliced cheese, fresh tomatoes, lettuce with a side of fries and coleslaw"},
+ {name:"FISH AND CHIP", price:14.9, category:"Western", img:"https://iili.io/KnYqzDQ.md.jpg", desc:"crispy fried fish of the day in our special batter served with fries, coleslaw and tartar sauce"},
+ {name:"CHICKEN PARMIGIANA", price:15.9, category:"Western", img:"https://iili.io/Kna9HI1.md.jpg", desc:"breaded chicken fillet topped with tomato puree and baked cheese on a bed of mashed potato with side of salad"},
+ {name:"CRISPY GRILLED SALMON", price:21.9, category:"Western", img:"https://iili.io/KnYqoRj.md.jpg", desc:"pan grilled salmon served with sauteed mushroom, buttered asparagus and mashed potato"},
+ {name:"GRILLED STEAK", price:27.9, category:"Western", img:"https://iili.io/KnYq0Ov.md.jpg", desc:"grilled premium steak served with a sauce and two sides of choosing"},
+ {name:"LAMB CHOPS", price:22.9, category:"Western", img:"https://iili.io/KnYqMWN.md.jpg", desc:"tender succulent lamb chops with a sauce and two sides of your choosing"},
+
+
+
+
+];
+const categories = ["All","Brunch","Asian","Western","Kids Bite","Pizza","Pasta","Appetisers","Salad","Soup","Drink","Coffee"];
+const categoryContainer = document.getElementById("categories");
+categories.forEach(cat=>{
+  const btn=document.createElement("button");
+  btn.textContent=cat;
+  btn.onclick=()=>filterMenu(cat);
+  categoryContainer.appendChild(btn);
+});
+
+/* === VARIABEL === */
+const menuContainer=document.getElementById("menu");
+const cartPanel=document.getElementById("cartPanel");
+const modal=document.getElementById("modal");
+const modalImg=document.getElementById("modalImg");
+const modalName=document.getElementById("modalName");
+const modalPrice=document.getElementById("modalPrice");
+const qtySpan=document.getElementById("qty");
+let modalDesc=document.getElementById("modalDesc");
+let currentItem=null; let qty=1; let cart=[];
+
+/* === MENU === */
+function renderMenu(items){
+  menuContainer.innerHTML="";
+  items.forEach((item)=>{
+    const index = menuItems.indexOf(item); // ambil index asli dari menuItems
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <img src="${item.img}">
+      <div class="card-body">
+        <h4>${item.name}</h4>
+        <p>$${item.price.toFixed(2)}</p>
+      </div>
+      <button class="add-btn" onclick="openModal(${index})">Add to Cart</button>
+    `;
+    menuContainer.appendChild(card);
+  });
+}
+
+function filterMenu(cat){
+  const filtered = cat==="All"?menuItems:menuItems.filter(m=>m.category===cat);
+  renderMenu(filtered);
+  if(cartPanel.classList.contains("active")) toggleCart();
+}
+
+/* === MODAL === */
+function openModal(index){
+  currentItem = menuItems[index]; qty=1; qtySpan.textContent=qty;
+  modalImg.src=currentItem.img;
+  modalName.textContent=currentItem.name;
+  modalPrice.textContent="$"+currentItem.price.toFixed(2);
+  modalDesc.textContent=currentItem.desc || "";
+  modal.classList.add("show");
+}
+function changeQty(delta){ qty=Math.max(1,qty+delta); qtySpan.textContent=qty; }
+function addToCart(){
+  cart.push({...currentItem, qty, note:"", addOns: []}); // tambahkan addOns: []
+  renderCart();
+  modal.classList.remove("show");
+  const cartBtn=document.querySelector(".cart-btn");
+  cartBtn.classList.add("cart-bounce");
+  setTimeout(()=>cartBtn.classList.remove("cart-bounce"),600);
+}
+
+
+/* === CART === */
+function toggleCart(){
+  cartPanel.classList.toggle("active");
+  document.querySelector(".cart-overlay").style.display =
+    cartPanel.classList.contains("active") ? "block" : "none";
+}
+function renderCart(){
+  const cartItems=document.getElementById("cartItems");
+  cartItems.innerHTML="";
+  let total=0; let itemCount=0;
+  cart.forEach((item,i)=>{
+    if(!item.addOns) item.addOns = [];
+
+    let itemTotal=item.price*item.qty;
+    // hitung addon
+    if(item.addOns && item.addOns.length>0){
+      item.addOns.forEach(ao=>{
+        itemTotal += ao.price*ao.qty;
+      });
+    }
+    total+=itemTotal;
+    itemCount+=item.qty;
+
+    let addonText="";
+    if(item.addOns && item.addOns.length>0){
+      addonText = item.addOns.map(ao=>`<div style="font-size:12px;color:#555;">+ ${ao.name} (${ao.qty}x) - $${(ao.price*ao.qty).toFixed(2)}</div>`).join("");
+    }
+
+    cartItems.innerHTML+=`
+      <div class="cart-item">
+        <span>${item.qty} x ${item.name}</span>
+        <span>$${itemTotal.toFixed(2)}</span>
+      </div>
+      ${addonText}
+      <div class="cart-actions">
+        <button onclick="updateQty(${i},-1)">-</button>
+        <button onclick="updateQty(${i},1)">+</button>
+        <button onclick="removeFromCart(${i})">Remove</button>
+        <button onclick="openAddonModal(${i})">➕ Add-on</button>
+      </div>
+      <input type="text" placeholder="Note" oninput="updateNote(${i},this.value)" value="${item.note}">
+    `;
+  });
+  document.getElementById("cartTotal").textContent="Total: $"+total.toFixed(2);
+  document.getElementById("cartBadge").textContent=itemCount;
+}
+let currentCartIndex=null;
+function openAddonModal(i){
+  currentCartIndex=i;
+  const list=document.getElementById("addonList");
+  list.innerHTML="";
+  addOns.forEach((ao,idx)=>{
+    // cek sudah ada di cart?
+    let existing = cart[i].addOns.find(x=>x.name===ao.name);
+    let qty = existing? existing.qty:0;
+    list.innerHTML+=`
+      <div class="addon-item">
+        <span>${ao.name} - $${ao.price.toFixed(2)}</span>
+        <div>
+          <button onclick="updateAddonQty(${i},${idx},-1)">-</button>
+          <span style="margin:0 5px;">${qty}</span>
+          <button onclick="updateAddonQty(${i},${idx},1)">+</button>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById("addonModal").classList.add("show");
+}
+function closeAddonModal(){
+  document.getElementById("addonModal").classList.remove("show");
+  renderCart();
+}
+function updateAddonQty(cartIndex,addonIndex,delta){
+  let item=cart[cartIndex];
+  let addon=addOns[addonIndex];
+  let existing=item.addOns.find(x=>x.name===addon.name);
+  if(!existing && delta>0){
+    item.addOns.push({...addon,qty:1});
+  } else if(existing){
+    existing.qty=Math.max(0,existing.qty+delta);
+    if(existing.qty===0){
+      item.addOns=item.addOns.filter(x=>x.name!==addon.name);
+    }
+  }
+  openAddonModal(cartIndex); // refresh tampilan
+}
+function outsideAddonClose(e){
+  const modal = document.getElementById("addonModal");
+  const box = document.querySelector(".addon-box");
+  if(e.target === modal){ 
+    closeAddonModal(); 
+  }
+}
+
+
+
+function removeFromCart(i){ cart.splice(i,1); renderCart(); }
+function updateQty(i,d){ cart[i].qty=Math.max(1,cart[i].qty+d); renderCart(); }
+function updateNote(i,v){ cart[i].note=v; }
+
+/* === TOMBOL LANDING === */
+function scrollToSection(id){ document.getElementById(id).scrollIntoView({behavior:"smooth"}); }
+function openReservation(){ if(!cartPanel.classList.contains("active")) toggleCart(); }
+
+/* === CHECKOUT KE WHATSAPP === */
+function orderNow(){
+  if(cart.length === 0){ 
+    alert("Cart masih kosong!"); 
+    return; 
+  }
+
+  const orderDate = document.getElementById("orderDate").value.trim();
+  const orderTime = document.getElementById("orderTime").value.trim(); // ✅ baru
+  const tableNo = document.getElementById("tableNo").value.trim();
+  const pax = document.getElementById("pax").value.trim();
+  const customerName = document.getElementById("custName").value.trim();
+
+  // === VALIDASI FORM ===
+  if(!orderDate || !orderTime || !tableNo || !pax || !customerName){
+    alert("Harap isi semua form (Nama, Table No, Pax, Date, dan Time) sebelum memesan!");
+    return;
+  }
+
+  let msg = `*Order*\n\n`;
+  msg += 
+`Date   : ${orderDate}\nTime   : ${orderTime}\nName   : ${customerName}\nTable  : ${tableNo}\nPax    : ${pax}\n\n`;
+
+  let total=0;
+  cart.forEach(item=>{
+    let itemTotal=item.price*item.qty;
+    msg += `• ${item.name} (${item.qty}x) - $${itemTotal.toFixed(2)}`;
+    if(item.note) msg += `\n   📝 ${item.note}`;
+    // add-ons
+    if(item.addOns && item.addOns.length>0){
+      item.addOns.forEach(ao=>{
+        msg += `\n   ➕ ${ao.name} (${ao.qty}x) - $${(ao.price*ao.qty).toFixed(2)}`;
+        itemTotal += ao.price*ao.qty;
+      });
+    }
+    total += itemTotal;
+    msg += `\n`;
+  });
+  msg += `\n💵 Total: $${total.toFixed(2)}\n\n(Please pay at counter)`;
+
+  const url = "https://wa.me/6283826772621?text="+encodeURIComponent(msg);
+  window.open(url,"_blank");
+
+  // === AUTO CLEAR CART ===
+  cart = [];
+  renderCart();
+  toggleCart();
+}
+
+
+
+/* === SCROLL ANIMATION === */
+function revealCards(){
+  const cards=document.querySelectorAll(".card");
+  cards.forEach(card=>{
+    const rect=card.getBoundingClientRect();
+    if(rect.top < window.innerHeight-50) card.classList.add("visible");
+  });
+}
+window.addEventListener("scroll", revealCards);
+
+/* INIT */
+renderMenu(menuItems);
+revealCards();
+</script>
+</body>
+</html>
