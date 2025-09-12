@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mile Coffee - Premium Menu</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+  body{background:#ffffff;color:#02745d;}
+  header{position:sticky;top:0;background:#fff;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+  .categories{display:flex;overflow-x:auto;gap:10px;padding:10px;}
+  .categories button{flex:0 0 auto;padding:10px 20px;border:none;background:#eee;border-radius:20px;cursor:pointer;transition:0.3s;}
+  .categories button:hover{background:#02745d;color:#fff;}
+  .menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;padding:20px;}
+
+  /* Glassmorphism Card */
+  .card{
+    position:relative;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    cursor:pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card:hover{transform: translateY(-10px) scale(1.05);box-shadow:0 15px 35px rgba(0,0,0,0.25);}
+  .card img{width:100%;height:180px;object-fit:cover;transition: transform 0.3s ease;}
+  .card:hover img{transform: scale(1.1);}
+  .card-body{padding:15px;text-align:center;position:relative;}
+  .card-body h4{margin-bottom:5px;font-weight:bold;color:#02745d;}
+  .card-body p{font-size:14px;color:#444;}
+  .add-btn{position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);background:#02745d;color:#fff;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-weight:bold;transition: bottom 0.3s ease;}
+  .card:hover .add-btn{bottom:20px;}
+
+  .cart-btn {
+  position: fixed;
+  bottom: 20px;   /* ⬇️ dari bawah */
+  right: 20px;    /* ⬅️ tetap di kanan */
+  background: #02745d;
+  color: #fff;
+  padding: 15px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  z-index: 1100;
+}
+
+  .cart-badge{position:absolute;top:1px;right:1px;background:red;color:#fff;border-radius:50%;font-size:17px;padding:2px 6px;}
+  .cart-panel{position:fixed;top:0;right:-400px;width:350px;height:100%;background:#fff;box-shadow:-2px 0 5px rgba(0,0,0,0.3);transition:0.3s;padding:20px;overflow-y:auto;z-index:1200;}
+  .cart-panel.active{right:0;}
+  .cart-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:none;z-index:1100;}
+  .cart-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;}
+  .cart-item input{width:60%;font-size:12px;}
+  .total{font-weight:bold;margin-top:15px;}
+  .checkout{margin-top:20px;}
+  .checkout input{width:100%;padding:8px;margin-bottom:10px;}
+  .checkout button{width:100%;padding:10px;background:#02745d;color:#fff;border:none;cursor:pointer;border-radius:5px;}
+
+  
+  /* Modal */
+  .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000;opacity:0;transition:opacity 0.3s;}
+  .modal.show{display:flex;opacity:1;}
+  .modal-content{background:#fff;padding:20px;border-radius:15px;max-width:400px;width:90%;text-align:center;position:relative;box-shadow:0 15px 35px rgba(0,0,0,0.25);}
+  .modal-content img{width:100%;height:220px;object-fit:cover;border-radius:15px;}
+  .qty-control{display:flex;justify-content:center;align-items:center;gap:15px;margin:15px 0;}
+  .qty-control button{padding:5px 15px;}
+  .close{position:absolute;top:10px;right:15px;font-size:22px;cursor:pointer;}
+  
+
+  @keyframes bounce {0%,100%{transform:scale(1);}30%{transform:scale(1.2);}50%{transform:scale(0.9);}70%{transform:scale(1.1);}}
+  .cart-bounce {animation:bounce 0.6s ease;}
+
+  .logo { max-width: 400px; margin-bottom: 0px; }
+  .slogan { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 20px; color: #ffffff; }
+  .buttons { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .buttons button { background-color: #02745d; color: white; padding: 12px 28px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .buttons button:hover { background-color: #025845; transform: scale(1.05); }
+  #home { display:flex; justify-content:center; align-items:center; text-align:center; height:80vh; background:#fafafa; flex-direction:column; padding:20px; }
+  .landing-center { display:flex; flex-direction:column; align-items:center; gap:15px; }
+
+#home {
+  position: relative;
+  background: url("https://iili.io/KncdNOQ.md.jpg") center center / cover no-repeat;
+  background-attachment: scroll; /* aman untuk mobile */
+  height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+  padding: 20px;
+  overflow: hidden;
+}
+
+#home::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: inherit;              /* ambil background dari #home */
+  filter: blur(2px) brightness(0.9); /* blur + halus + sedikit redup */
+  transform: scale(1.1);           /* biar ga ada garis tepi blur */
+  z-index: 0;
+}
+
+#home .landing-center {
+  position: relative;
+  z-index: 1; /* supaya konten tetap tajam di atas blur */
+}
+
+
+
+
+  @media (max-width: 768px) {
+    .menu { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 10px; }
+    .card img { height: 120px; }
+    .card-body h4 { font-size: 16px; }
+    .card-body p { font-size: 12px; }
+    .add-btn { padding: 8px 16px; font-size: 12px; }
+    .buttons button { padding: 10px 20px; font-size: 14px; }
+    .slogan { font-size: 1.2rem; }
+  }
+
+  .card { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .card.visible { opacity: 1; transform: translateY(0); }
+ 
+  /* Tambahan untuk tombol dalam cart */
+  .cart-actions {
+    display: flex;
+    gap: 5px;
+    margin: 5px 0;
+  }
+  .cart-actions button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: none;
+    background: #02745d;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .cart-actions button:hover {
+    background: #025845;
+  }
+
+  .addon-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none;
+    align-items: center; justify-content: center; z-index: 2500;
+  }
+  .addon-modal.show { display: flex; }
+  .addon-box {
+    background: #fff; padding: 20px; border-radius: 12px;
+    width: 300px; max-height: 80vh; overflow-y: auto;
+  }
+  .addon-box h3 { margin-bottom: 15px; color: #02745d; }
+  .addon-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
+  .addon-item span { flex:1; }
+  .addon-item button {
+    padding: 2px 8px; font-size: 12px; border:none;
+    background: #02745d; color: #fff; border-radius: 4px; cursor:pointer;
+  }
+.checkout label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #02745d;
+  display: block;
+  margin: 5px 0 2px;
+}
+.categories {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 12px 10px;
+  background: #fff;
+  position: sticky;
+  top: 60px; /* supaya nempel di bawah header */
+  z-index: 1000;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.categories::-webkit-scrollbar {
+  display: none; /* sembunyikan scrollbar di mobile */
+}
+
+.categories button {
+  flex: 0 0 auto;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9999px; /* pill style */
+  background: #f3f3f3;
+  color: #02745d;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: all 0.3s ease;
+}
+
+.categories button:hover {
+  background: #e0f2f1;
+}
+
+.categories button.active {
+  background: #02745d;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+#groupOrderBtn:hover {
+  background-color: #025845;
+}
+
+
+
+
+</style>
+</head>
+<body>
+<section id="home">
+  <div class="landing-center">
+    <img src="https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756994909258" alt="Mile Logo" class="logo" />
+    <div class="slogan">coffee - food - family</div>
+    <div class="buttons">
+  <button onclick="scrollToSection('menu')">See Menu</button>
+  <button onclick="openReservation()">Order</button>
+  <button id="groupOrderBtn">Group Order</button>
+
+
+    </div>
+  </div>
+</section>
+
+<header><div class="categories" id="categories"></div></header>
+<div class="menu" id="menu"></div>
+
+<div class="cart-btn" onclick="toggleCart()">🛒 Cart<div class="cart-badge" id="cartBadge">0</div></div>
+<div class="cart-overlay" onclick="toggleCart()"></div>
+<div class="cart-panel" id="cartPanel">
+  <h2>Your Order</h2>
+  <div id="cartItems"></div>
+  <div class="total" id="cartTotal">Total: $0.00</div>
+<div class="checkout">
+  <input type="text" id="custName" placeholder="Your Name">
+
+  <input type="number" id="tableNo" placeholder="Table No.">
+
+  <input type="number" id="pax" placeholder="Pax">
+
+  <label for="orderDate">Date</label>
+  <input type="date" id="orderDate">
+
+  <label for="orderTime">Time</label>
+  <input type="time" id="orderTime">
+
+  <button onclick="orderNow()">Order</button>
+</div>
+
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" onclick="modal.classList.remove('show')">&times;</span>
+    <img id="modalImg" src="" alt="">
+    <h3 id="modalName"></h3>
+    <p id="modalPrice"></p>
+    <p id="modalDesc"></p>
+    <div class="qty-control">
+      <button onclick="changeQty(-1)">-</button>
+      <span id="qty">1</span>
+      <button onclick="changeQty(1)">+</button>
+    </div>
+    <button onclick="addToCart()">Add to Cart</button>
+  </div>
+</div>
+<div class="addon-modal" id="addonModal" onclick="outsideAddonClose(event)">
+  <div class="addon-box">
+    <h3>Select Add-ons</h3>
+    <div id="addonList"></div>
+    <button onclick="closeAddonModal()" style="margin-top:10px;width:100%;background:#025845;color:#fff;padding:8px;border:none;border-radius:6px;cursor:pointer;">Done</button>
+  </div>
+</div>
+
+
+<script>
+  const addOns = [
+ {name:"Hash brown", price:3.0},
+ {name:"Poached egg", price:1.5},
+{name:"Scrambled egg", price:1.5},
+{name:"Sunny side up", price:1.5},
+ {name:"Hollandaise sauce", price:2.5},
+ {name:"Sauteed mushroom", price:3.5},
+{name:"Sauteed potato", price:3.5},
+{name:"Grilled chicken", price:4.5},
+{name:"Mashed potato", price:2.5},
+{name:"Smoke salmon", price:4.5},
+
+
+
+];
+
+/* === DATA MENU & CATEGORY === */
+const menuItems = [
+  {name:"MILE’S SPECIAL", price:9.9, category:"Brunch", img:"https://iili.io/KnYqxOx.md.jpg", desc:"our big breakfast is a hearty two sunny side ups on brioche toast with a grilled sausage, sauteed mushroom, hash brown, grilled tomatoes and salad on the side."},
+ {name:"EGG ROYALE", price:14.8, category:"Brunch", img:"https://www.tastingtable.com/img/gallery/what-are-eggs-royale-and-what-is-the-primary-ingredient/intro-1681324176.jpg", desc:"poached egg with smoked salmon, topped with our freshly made hollandaise sauce, all on a brioche bread with a side of salad"},
+ {name:"EGG BENEDICT", price:10.0, category:"Brunch", img:"https://iili.io/KnaFavj.md.jpg", desc:"poached egg with chicken ham, topped with our freshly made hollandaise sauce, all on a brioche bread with a side of salad"},
+ {name:"GOLDEN WAFFLES", price:12.9, category:"Brunch", img:"https://iili.io/KnYq8zl.md.jpg", desc:"a waffles vanilla ice cream sandwich topped with fresh strawberries and cream, drizzled with maple syrup"},
+ {name:"PANCAKE", price:8.9, category:"Brunch", img:"https://heavenlyhomecooking.com/wp-content/uploads/2021/03/Pancakes-for-One-Recipe-Featured-2-500x375.jpg", desc:"double stacked pancakes topped with fresh blueberries and strawberries, finished with maple syrup"},
+ {name:"FRENCH TOAST", price:8.9, category:"Brunch", img:"https://iili.io/Kna3PIV.md.jpg", desc:"two slice of french toast served with fruits, sprinkled with cinnamon sugar, maple syrup and topped with cream"},
+ {name:"SCRAMBLED EGG TOAST", price:7.5, category:"Brunch", img:"https://iili.io/KnYym7V.md.jpg", desc:"toasted brioche bread with scrambled eggs and a side of salad"},
+ {name:"CROQUE MADAME", price:8.9, category:"Brunch", img:"https://iili.io/KnYytrx.md.jpg", desc:"chicken ham sandwich with bechamel sauce on gruyere cheese, topped with a sunny side-up, and a side of salad"},
+ {name:"CROQUE MONSIEUR", price:7.9, category:"Brunch", img:"https://iili.io/KnYym7V.md.jpg", desc:"chicken ham sandwich with bechamel sauce on gruyere cheese, and a side of salad"},
+ {name:"SALMON CROISSANT", price:10.9, category:"Brunch", img:"https://iili.io/KnaK5oN.md.jpg", desc:"toasted croissant with smoked salmon, scrambled egg and side of salad"},
+{name:"SIGNATURE FRIES", price:10.9, category:"Appetisers", img:"https://iili.io/KnYqTxV.md.jpg", desc:"our signature fries are drizzled with freshly made mentaiko sauce"},
+ {name:"SALTED EGG FRIES", price:5.5, category:"Appetisers", img:"https://images.ctfassets.net/0dkgxhks0leg/pDJokoywrhcbRP5lXd50i/05b241a319bce2dc0bb0952951032020/Salted_Egg_Coated_Fries.jpg", desc:"fried fries coated with salted egg, chili and sliced onion"},
+ {name:"CALAMARI", price:7.5, category:"Appetisers", img:"https://iili.io/KnYqO5G.md.jpg", desc:"breaded calamari with tartar sauce and garlic mayo"},
+ {name:"MOZZARELLA STICK", price:7.9, category:"Appetisers", img:"https://iili.io/KnaFq2s.md.jpg", desc:"battered fried mozzarella cheese served with mariana sauce for dipping"},
+ {name:"BEEF NACHOS", price:9.9, category:"Appetisers", img:"https://iili.io/KnYqh0X.md.jpg", desc:"tortilla chips, chili con carne, white onion, capsicum, jalapeno topped with mozzarella and cheddar cheese"},
+ {name:"GARLIC BREAD", price:5.5, category:"Appetisers", img:"https://assets-jpcust.jwpsrv.com/thumbnails/rkiijkuj-720.jpg", desc:"freshly baked sliced baguette with garlic and herbs"},
+ {name:"CHICKEN WING", price:7.9, category:"Appetisers", img:"https://iili.io/Kna91j9.md.jpg", desc:"battered fried chicken wings in a flavour of your choosing * barbecue * teriyaki * buffalo*"},
+ {name:"MUSHROOM SOUP", price:9.9, category:"Soup", img:"https://www.carolinescooking.com/wp-content/uploads/2021/10/wild-mushroom-soup-featured-pic-sq.jpg", desc:""},
+ {name:"CAESAR SALAD", price:7.9, category:"Salad", img:"https://iili.io/Kna9YYl.md.jpg", desc:"romaine lettuce, black olive, cherry tomatoes, sliced avocados topped with our freshly-made balsamic vinaigrette"},
+{name:"THE MILE STEAK", price:18.9, category:"Western", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"our signature juicy steak burger with mushroom sauce and two sides of your choosing"},
+ {name:"CLUB SANDWICH", price:12.8, category:"Western", img:"https://iili.io/KnaKLUg.md.jpg", desc:"grilled chicken sandwich with beef rasher, tomatoes, cucumber, lettuce, sliced cheese, thousand island sauce, and side of fries"},
+ {name:"CLASSIC BEEF BURGER", price:10.9, category:"Western", img:"https://iili.io/KnYq6ge.md.jpg", desc:"freshly-made beef patty, sliced cheese, fresh tomatoes, lettuce with a side of fries and coleslaw"},
+ {name:"FISH AND CHIP", price:14.9, category:"Western", img:"https://iili.io/KnYqzDQ.md.jpg", desc:"crispy fried fish of the day in our special batter served with fries, coleslaw and tartar sauce"},
+ {name:"CHICKEN PARMIGIANA", price:15.9, category:"Western", img:"https://iili.io/Kna9HI1.md.jpg", desc:"breaded chicken fillet topped with tomato puree and baked cheese on a bed of mashed potato with side of salad"},
+ {name:"CRISPY GRILLED SALMON", price:21.9, category:"Western", img:"https://iili.io/KnYqoRj.md.jpg", desc:"pan grilled salmon served with sauteed mushroom, buttered asparagus and mashed potato"},
+ {name:"GRILLED STEAK", price:27.9, category:"Western", img:"https://iili.io/KnYq0Ov.md.jpg", desc:"grilled premium steak served with a sauce and two sides of choosing"},
+ {name:"LAMB CHOPS", price:22.9, category:"Western", img:"https://iili.io/KnYqMWN.md.jpg", desc:"tender succulent lamb chops with a sauce and two sides of your choosing"},
+ {name:"SPAGHETTI BOLOGNESE", price:12.9, category:"Pasta", img:"https://iili.io/KnYypkB.md.jpg", desc:"a tangle of spaghetti pasta in traditional bolognese sauce"},
+ {name:"FETTUCINI CARBONARA", price:11.9, category:"Pasta", img:"https://iili.io/Kna9VEb.md.jpg", desc:"fettucini coated with rich cream sauce cheese with beef rashers"},
+ {name:"AGLIO OLIO DI MARE", price:13.9, category:"Pasta", img:"https://iili.io/KnaK3wQ.md.jpg", desc:"mixed seafood sauteed in garlic, olive oil and chili on a bed of spaghetti pasta"},
+ {name:"PENNE ARABIATTA", price:12.5, category:"Pasta", img:"https://iili.io/Kna3lst.md.jpg", desc:"sauteed cherry tomatoes, black olive, chili and pasta in a traditional tomatoes sauce"},
+ {name:"PESTO FETTUCINI MUSHROOM", price:11.8, category:"Pasta", img:"https://iili.io/KnaFP8G.md.jpg", desc:"pasta in freshly-made pesto sauce with pine nuts and parmesan cheese"},
+{name:"PESTO FETTUCINI GRILLED CHICKEN", price:12.8, category:"Pasta", img:"https://iili.io/KnaFP8G.md.jpg", desc:"pasta in freshly-made pesto sauce with pine nuts and parmesan cheese"},
+{name:"PESTO FETTUCINI SALMON", price:13.8, category:"Pasta", img:"https://iili.io/KnaFP8G.md.jpg", desc:"pasta in freshly-made pesto sauce with pine nuts and parmesan cheese"},
+ {name:"BEEF LASAGNA", price:14.9, category:"Pasta", img:"https://iili.io/KnaFs9f.md.jpg", desc:"baked homemade lasagna with layers of traditional bolognese sauce, bechamel, mozzarella and parmesan"},
+ {name:"SWEET CREAMY PASTA", price:12.5, category:"Pasta", img:"https://www.sprinklesandsprouts.com/wp-content/uploads/2019/02/Creamy-Spicy-Chicken-Pasta.jpg", desc:"penne pasta with tomatoes basil puree and topped with smoke salmon"},
+{name:"MARGHERITA", price:12.9, category:"Pizza", img:"https://www.rakijagrill.com/wp-content/uploads/2020/07/Margherita-.jpg", desc:"traditional tomatoes sauce, mozzarella and fresh basil"},
+ {name:"PEPPERONI", price:14.9, category:"Pizza", img:"https://iili.io/KnaHjPs.md.jpg", desc:"tomatoes sauce, pepperoni, mozzarella, and cheddar "},
+ {name:"4 CHEESE", price:16.5, category:"Pizza", img:"https://iili.io/Kna9EQe.md.jpg", desc:"cream cheese sauce, mozzarella, emmental cheddar and parmesan"},
+ {name:"HAWAIIAN", price:14.9, category:"Pizza", img:"https://www.allrecipes.com/thmb/v1Xi2wtebK1sZwSJitdV4MGKl1c=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/hawaiian-pizza-ddmfs-3x2-132-450eff04ad924d9a9eae98ca44e3f988.jpg", desc:"capsicums, ham, beef rasher, pineapples, and mozzarella in tomatoes sauce"},
+{name:"TUNA", price:14.9, category:"Pizza", img:"https://iili.io/KnaKDOv.md.jpg", desc:"capsicums, tuna, onion, mushroom, and mozzarella"},
+{name:"HONEY GARLIC CHICKEN", price:15.9, category:"Pizza", img:"https://iili.io/KnaKs0F.md.jpg", desc:"grilled chicken with honey, soy, onion, garlic, and mozzarella"},
+ {name:"BALINESE CHICKEN SATAY", price:6.5, category:"Asian", img:"https://www.topwisata.info/wp-content/uploads/2025/02/sate-lilit.webp", desc:"minced chicken cooked on lemongrass skewers served with chili relish"},
+{name:"FRIED HATI BUYAH", price:6.5, category:"Asian", img:"https://wfg32p.s3.amazonaws.com/media/dishes/hati_buyah_6785-reg.jpg", desc:"marinated deep fried beef lungs with onion and red chili. good for one person"},
+{name:"BALINESE RICE PALTTER", price:13.8, category:"Asian", img:"https://tastythriftytimely.com/wp-content/uploads/2024/02/Balinese-Platter-NEW-2.jpg", desc:"a balinese traditional dish thats includes fried chicken, chicken satay, salad and chili relish"},
+{name:"NASI LEMAK AYAM", price:7.5, category:"Asian", img:"https://iili.io/KnaJR5l.md.jpg", desc:"coconut rice served with our signature sauce over fried chicken,accompanied by sambal, and prawn crackers"},
+{name:"JAVANESE FRIED RICE", price:7.8, category:"Asian", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"javanese style of fried rice mixed with sambal, served with grilled chicken and vegetables "},
+{name:"GRILLED BANANA LEAF RICE AYAM BAKAR", price:7.8, category:"Asian", img:"https://asset.kompas.com/crops/GXwCjiQKaChTXZd73SgeU_j3ZcM=/0x381:800x914/1200x800/data/photo/2022/06/05/629c1ffc9ce3d.jpeg", desc:"grilled rice wrapped in banana leaf served with fried tofu, fried tempe and sambal"},
+{name:"GRILLED BANANA LEAF RICE TALIWANG", price:7.8, category:"Asian", img:"https://iili.io/Kna3PIV.md.jpg", desc:"grilled rice wrapped in banana leaf served with fried tofu, fried tempe and sambal"},
+{name:"GRILLED BANANA LEAF RICE GRILLED FISH", price:12.8, category:"Asian", img:"https://iili.io/Kna3PIV.md.jpg", desc:"grilled rice wrapped in banana leaf served with fried tofu, fried tempe and sambal"},
+{name:"PERI-PERI CHICKEN", price:12.5, category:"Asian", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"chicken breast served with our homemade peri-peri sauce, fried rice and coleslaw"},
+{name:"LAKSA SARAWAK", price:7.8, category:"Asian", img:"https://iili.io/KnaJ7bS.md.jpg", desc:"rice noodles soup served with steamed chicken, omelette, shrimp, fish cake and cucumber"},
+{name:"SWEET & SOUR CHICKEN", price:6.5, category:"Asian", img:"https://thecozycook.com/wp-content/uploads/2022/03/Sweet-and-Sour-Chicken-n2.jpg", desc:"crispy chicken, bell pepper and pineapples coated in the classic sweet sour sauces served with rice"},
+{name:"SWEET & SOUR PRAWN", price:7.5, category:"Asian", img:"https://cdn.apartmenttherapy.info/image/upload/v1654093031/k/Photo/Recipe%20Ramp%20Up/2022-05-Sweet-And-Sour-Shrimp/Sweet_Sour_Shrimp_-_Hi-Res-3.jpg", desc:"crispy prawn, bell pepper and pineapples coated in the classic sweet sour sauces served with rice"},
+{name:"BLACK PEPPER BEEF", price:7.5, category:"Asian", img:"https://i.ytimg.com/vi/3U0HWne8KnE/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCZCh7RNy3Njv7sJonJDrbHr4XU_w", desc:"tender strips of steak, stir fried in black pepper sauce with bell peppers and onion served with rice"},
+{name:"BLACK PEPPER CHICKEN", price:6.5, category:"Asian", img:"https://www.jocooks.com/wp-content/uploads/2021/09/black-pepper-chicken-1-12.jpg", desc:"chicken strips, stir fried in black pepper sauce with bell peppers and onion served with rice"},
+{name:"BEEF BONE SOUP", price:7.5, category:"Asian", img:"https://iili.io/KnaJlse.md.jpg", desc:"aromatic beef bone soup flavoured with spices and chilies served with tomatoes, and rice"},
+{name:"CHINESE PRAWN FRIED RICE", price:6.5, category:"Asian", img:"https://rasamalaysia.com/wp-content/uploads/2014/12/shrimp_fried_rice_thumb.jpg", desc:"fried rice stir-fried with egg, spring onion, dried garlic, mix vege, and prawn"},
+{name:"CHICKEN TERIYAKI", price:6.5, category:"Ricebowls", img:"https://theheirloompantry.co/wp-content/uploads/2022/09/teriyaki-chicken-bowl-donburi-the-heirloom-pantry-04.jpg", desc:""},
+{name:"SALMON TERIYAKI", price:7.5, category:"Ricebowls", img:"https://realsimplegood.com/wp-content/uploads/Grilled-teriyaki-salmon-bowls-four.jpg", desc:""},
+{name:"KOREAN SPICY CHICKEN", price:6.5, category:"Ricebowls", img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXeIRveM5xFPP0VWYI7_5reVcZxd2tyHI0Vw&s", desc:""},
+ {name:"FISH AND CHIPS KIDS", price:8.9, category:"Kids bite", img:"https://iili.io/KnYqzDQ.md.jpg", desc:"crispy fried fish of the day in our special batter served with fries, coleslaw and tartar sauce"},
+{name:"SLIDERS", price:8.9, category:"Kids bite", img:"https://us.123rf.com/450wm/malkovkosta/malkovkosta1906/malkovkosta190601382/125644013-deux-mini-burgers-au-restaurant-pain-au-s%C3%A9same-galette-de-viande-tomate-laitue-et-cornichon.jpg?ver=6", desc:"mini burgers with our freshly-made beef patty, lettuce, cheese on a bed mashed potato with a side of fries"},
+{name:"CHICKEN PARMIGIANA KIDS", price:8.9, category:"Kids bite", img:"https://iili.io/Kna9HI1.md.jpg", desc:"breaded chicken fillet topped with tomato puree and baked cheese on a bed of mashed potato with side of salad"},
+{name:"MAC & CHEESE KIDS", price:8.9, category:"Kids bite", img:"https://iili.io/Kna9q2R.md.jpg", desc:"macaroni pasta with beef rasher, fresh mushrooms and cheddar cheese"},
+{name:"SPAGHETTI KIDS", price:7.5, category:"Kids bite", img:"https://iili.io/KnYypkB.md.jpg", desc:"a tangle of spaghetti pasta in traditional bolognese sauce"},
+{name:"CRISPY FRIES", price:4.5, category:"Kids bite", img:"https://media.istockphoto.com/id/615800224/photo/basket-of-french-fries.jpg?s=612x612&w=0&k=20&c=paeTI0-I5FM9-XeNlR6DLX6qda5eoW25MXyb94y1hgQ=", desc:"lightly salted real potato fries"},
+{name:"POTATO WEDGES", price:5.9, category:"Kids bite", img:"https://www.fromachefskitchen.com/wp-content/uploads/2019/09/Old-Bay-Roasted-Potato-Wedges-with-Vermont-Cheddar-Cheese-Sauce-12.jpg", desc:"fried potato wedges with a side of garlic mayo and a cheese dip"},
+{name:"CHICKEN TENDERS", price:7.9, category:"Kids bite", img:"https://thehogwallow.com/assets/components/phpthumbof/cache/chickentendersoutside.91a174262967655a39d895ef3fe6462e.webp", desc:"battered fried chicken tenders with fries and two dips, garlic mayo and thousand island"},
+{name:"MICKEY WAFFLES", price:8.9, category:"Kids bite", img:"https://iili.io/KnaKt5J.md.jpg", desc:"a waffles vanilla ice cream sandwich topped with fresh strawberries and cream, drizzled with maple syrup"},
+{name:"CHICKEN WING KIDS", price:6.9, category:"Kids bite", img:"https://iili.io/Kna91j9.md.jpg", desc:"battered fried chicken wing"},
+{name:"LONG BLACK HOT", price:4, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"LONG BLACK COLD", price:4.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"LATTEE HOT", price:5.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"LATTEE COLD", price:6, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CAPPUCCINO HOT", price:5.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CAPPUCCINO COLD", price:6, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"FLAT WHITE HOT", price:5.8, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"FLAT WHITE COLD", price:6.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MOCCA HOT", price:5.8, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MOCCA COLD", price:6.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"SPANISH LATTE HOT", price:5.8, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"SPANISH LATTE COLD", price:6.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"VIETNAMESE HOT", price:5.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"VIETNAMESE COLD", price:4, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"FLAVOURED LATTE HOT", price:5.8, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"hazelnut/vanilla/salted caramel/caramel/macadamia/rose"},
+{name:"FLAVOURED LATTE COLD", price:6.5, category:"Coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"hazelnut/vanilla/salted caramel/caramel/macadamia/rose"},
+{name:"TEH TARIK HOT", price:3, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"TEH TARIK COLD", price:3.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"LEMON TEA HOT", price:3.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"LEMON TEA COLD", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"HONEY LEMON TEA HOT", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"HONEY LEMON TEA COLD", price:4.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHAI TEA LATTE HOT", price:5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHAI TEA LATTE COLD", price:5.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"ENGLISH BREAKFAST HOT", price:3.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"ENGLISH BREAKFAST COLD", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"EARL GREY HOT", price:3.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"EARL GREY COLD", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHAMOMILE HOT", price:3.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHAMOMILE COLD", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"PEPPERMINT HOT", price:3.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"PEPPERMINT COLD", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},{name:"PEACH HOT", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"PEACH COLD", price:4.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},{name:"BERRY BUST HOT", price:4, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"BERRY BUST COLD", price:4.5, category:"Tea", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MATCHA LATTE HOT", price:5, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MATCHA LATTE COLD", price:5.5, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MATCHA COFFEE LATTE HOT", price:5.5, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MATCHA COFFEE LATTE COLD", price:6, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"STRAWBERRIES MATCHA LATTE HOT", price:5.5, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"STRAWBERRIES MATCHA LATTE COLD", price:6, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"GULA MELAKA MATCHA LATTE HOT", price:5.5, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"GULA MELAKA MATCHA LATTE COLD", price:6, category:"Matcha", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MOJITO", price:5, category:"Mixology", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"lime goodness with mint and ginger"},
+{name:"LEMONADE", price:5, category:"Mixology", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"freshly squeezed lemons with sparkling water"},
+{name:"COFFEE LEMONADE", price:6, category:"Mixology", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"zesty blend of tangy lemonade and bold coffee"},
+{name:"PEACH TEA COFFEE", price:5, category:"Mixology", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:"fruity peach tea with robust coffee"},
+{name:"MILO DINOSAUR", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"KITKAT CRUNCH", price:6, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"OREO CRUCH", price:6, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHOCOLATE HAZELNUT", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MANGO DREAM", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MIX BERRIES DELIGHT", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MACHA MANIA", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MOCHA RUSH", price:6, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"GOLDEN CARAMEL", price:6, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"COFFEE CRUMBLE", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MINT COFFEE CRUMBLE", price:5.5, category:"Smoothies", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"APPLE", price:5, category:"Juice", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"WATERMELON", price:5, category:"Juice", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"ORANGE", price:5, category:"Juice", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"APPLE JUICE", price:3, category:"Kids drink", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"ORANGE JUICE", price:3, category:"Kids drink", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"WATERMELON JUICE", price:3, category:"Kids drink", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"ICED MILO", price:2, category:"Kids drink", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"ICED CHOCOLATE", price:2, category:"Kids drink", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHOCOLATE HOT", price:5, category:"Non-coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"CHOCOLATE ICED", price:5.5, category:"Non-coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MILO HOT", price:3.5, category:"Non-coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MILO ICED", price:4, category:"Non-coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"SOFT DRINK", price:2, category:"Non-coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+{name:"MINERAL WATER", price:2, category:"Non-coffee", img:"https://ik.imagekit.io/qntwntk9qb/IMG_6571.PNG?updatedAt=1756974620706", desc:""},
+
+];
+const categories = ["All","Brunch","Asian","Western","Kids bite","Pizza","Pasta","Appetisers","Ricebowls","Salad","Soup","Tea","Kids drink","Coffee","Matcha","Smoothies","Juice","Mixology","Non-coffee"];
+const categoryContainer = document.getElementById("categories");
+categories.forEach(cat=>{
+  const btn=document.createElement("button");
+  btn.textContent=cat;
+  btn.onclick=()=>filterMenu(cat);
+  categoryContainer.appendChild(btn);
+});
+const categoryButtons = document.querySelectorAll('.categories button');
+
+categoryButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    categoryButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+
+/* === VARIABEL === */
+const menuContainer=document.getElementById("menu");
+const cartPanel=document.getElementById("cartPanel");
+const modal=document.getElementById("modal");
+const modalImg=document.getElementById("modalImg");
+const modalName=document.getElementById("modalName");
+const modalPrice=document.getElementById("modalPrice");
+const qtySpan=document.getElementById("qty");
+let modalDesc=document.getElementById("modalDesc");
+let currentItem=null; let qty=1; let cart=[];
+
+/* === MENU === */
+function renderMenu(items){
+  menuContainer.innerHTML="";
+  items.forEach((item)=>{
+    const index = menuItems.indexOf(item); // ambil index asli dari menuItems
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <img src="${item.img}">
+      <div class="card-body">
+        <h4>${item.name}</h4>
+        <p>$${item.price.toFixed(2)}</p>
+      </div>
+      <button class="add-btn" onclick="openModal(${index})">Add to Cart</button>
+    `;
+    menuContainer.appendChild(card);
+  });
+}
+
+function filterMenu(cat){
+  const filtered = cat==="All"?menuItems:menuItems.filter(m=>m.category===cat);
+  renderMenu(filtered);
+  if(cartPanel.classList.contains("active")) toggleCart();
+}
+
+/* === MODAL === */
+function openModal(index){
+  currentItem = menuItems[index]; qty=1; qtySpan.textContent=qty;
+  modalImg.src=currentItem.img;
+  modalName.textContent=currentItem.name;
+  modalPrice.textContent="$"+currentItem.price.toFixed(2);
+  modalDesc.textContent=currentItem.desc || "";
+  modal.classList.add("show");
+}
+function changeQty(delta){ qty=Math.max(1,qty+delta); qtySpan.textContent=qty; }
+function addToCart(){
+  cart.push({...currentItem, qty, note:"", addOns: []}); // tambahkan addOns: []
+  renderCart();
+  modal.classList.remove("show");
+  const cartBtn=document.querySelector(".cart-btn");
+  cartBtn.classList.add("cart-bounce");
+  setTimeout(()=>cartBtn.classList.remove("cart-bounce"),600);
+}
+
+
+/* === CART === */
+function toggleCart(){
+  cartPanel.classList.toggle("active");
+  document.querySelector(".cart-overlay").style.display =
+    cartPanel.classList.contains("active") ? "block" : "none";
+}
+function renderCart(){
+  const cartItems=document.getElementById("cartItems");
+  cartItems.innerHTML="";
+  let total=0; let itemCount=0;
+  cart.forEach((item,i)=>{
+    if(!item.addOns) item.addOns = [];
+
+    let itemTotal=item.price*item.qty;
+    // hitung addon
+    if(item.addOns && item.addOns.length>0){
+      item.addOns.forEach(ao=>{
+        itemTotal += ao.price*ao.qty;
+      });
+    }
+    total+=itemTotal;
+    itemCount+=item.qty;
+
+    let addonText="";
+    if(item.addOns && item.addOns.length>0){
+      addonText = item.addOns.map(ao=>`<div style="font-size:12px;color:#555;">+ ${ao.name} (${ao.qty}x) - $${(ao.price*ao.qty).toFixed(2)}</div>`).join("");
+    }
+
+    cartItems.innerHTML+=`
+      <div class="cart-item">
+        <span>${item.qty} x ${item.name}</span>
+        <span>$${itemTotal.toFixed(2)}</span>
+      </div>
+      ${addonText}
+      <div class="cart-actions">
+        <button onclick="updateQty(${i},-1)">-</button>
+        <button onclick="updateQty(${i},1)">+</button>
+        <button onclick="removeFromCart(${i})">Remove</button>
+        <button onclick="openAddonModal(${i})">➕ Add-on</button>
+      </div>
+      <input type="text" placeholder="Note" oninput="updateNote(${i},this.value)" value="${item.note}">
+    `;
+  });
+  document.getElementById("cartTotal").textContent="Total: $"+total.toFixed(2);
+  document.getElementById("cartBadge").textContent=itemCount;
+}
+let currentCartIndex=null;
+function openAddonModal(i){
+  currentCartIndex=i;
+  const list=document.getElementById("addonList");
+  list.innerHTML="";
+  addOns.forEach((ao,idx)=>{
+    // cek sudah ada di cart?
+    let existing = cart[i].addOns.find(x=>x.name===ao.name);
+    let qty = existing? existing.qty:0;
+    list.innerHTML+=`
+      <div class="addon-item">
+        <span>${ao.name} - $${ao.price.toFixed(2)}</span>
+        <div>
+          <button onclick="updateAddonQty(${i},${idx},-1)">-</button>
+          <span style="margin:0 5px;">${qty}</span>
+          <button onclick="updateAddonQty(${i},${idx},1)">+</button>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById("addonModal").classList.add("show");
+}
+function closeAddonModal(){
+  document.getElementById("addonModal").classList.remove("show");
+  renderCart();
+}
+function updateAddonQty(cartIndex,addonIndex,delta){
+  let item=cart[cartIndex];
+  let addon=addOns[addonIndex];
+  let existing=item.addOns.find(x=>x.name===addon.name);
+  if(!existing && delta>0){
+    item.addOns.push({...addon,qty:1});
+  } else if(existing){
+    existing.qty=Math.max(0,existing.qty+delta);
+    if(existing.qty===0){
+      item.addOns=item.addOns.filter(x=>x.name!==addon.name);
+    }
+  }
+  openAddonModal(cartIndex); // refresh tampilan
+}
+function outsideAddonClose(e){
+  const modal = document.getElementById("addonModal");
+  const box = document.querySelector(".addon-box");
+  if(e.target === modal){ 
+    closeAddonModal(); 
+  }
+}
+
+
+
+function removeFromCart(i){ cart.splice(i,1); renderCart(); }
+function updateQty(i,d){ cart[i].qty=Math.max(1,cart[i].qty+d); renderCart(); }
+function updateNote(i,v){ cart[i].note=v; }
+
+/* === TOMBOL LANDING === */
+function scrollToSection(id){ document.getElementById(id).scrollIntoView({behavior:"smooth"}); }
+function openReservation(){ if(!cartPanel.classList.contains("active")) toggleCart(); }
+
+/* === CHECKOUT KE WHATSAPP === */
+function orderNow(){
+  if(cart.length === 0){ 
+    alert("Cart masih kosong!"); 
+    return; 
+  }
+
+  const orderDate = document.getElementById("orderDate").value.trim();
+  const orderTime = document.getElementById("orderTime").value.trim(); // ✅ baru
+  const tableNo = document.getElementById("tableNo").value.trim();
+  const pax = document.getElementById("pax").value.trim();
+  const customerName = document.getElementById("custName").value.trim();
+
+  // === VALIDASI FORM ===
+  if(!orderDate || !orderTime || !tableNo || !pax || !customerName){
+    alert("Harap isi semua form (Nama, Table No, Pax, Date, dan Time) sebelum memesan!");
+    return;
+  }
+
+  let msg = `*Order*\n\n`;
+  msg += 
+`Date   : ${orderDate}\nTime   : ${orderTime}\nName   : ${customerName}\nTable  : ${tableNo}\nPax    : ${pax}\n\n`;
+
+  let total=0;
+  cart.forEach(item=>{
+    let itemTotal=item.price*item.qty;
+    msg += `• ${item.name} (${item.qty}x) - $${itemTotal.toFixed(2)}`;
+    if(item.note) msg += `\n   📝 ${item.note}`;
+    // add-ons
+    if(item.addOns && item.addOns.length>0){
+      item.addOns.forEach(ao=>{
+        msg += `\n   ➕ ${ao.name} (${ao.qty}x) - $${(ao.price*ao.qty).toFixed(2)}`;
+        itemTotal += ao.price*ao.qty;
+      });
+    }
+    total += itemTotal;
+    msg += `\n`;
+  });
+  msg += `\n💵 Total: $${total.toFixed(2)}\n\n(Please pay at counter)`;
+
+  const url = "https://wa.me/6283826772621?text="+encodeURIComponent(msg);
+  window.open(url,"_blank");
+
+  // === AUTO CLEAR CART ===
+  cart = [];
+  renderCart();
+  toggleCart();
+}
+
+
+
+/* === SCROLL ANIMATION === */
+function revealCards(){
+  const cards=document.querySelectorAll(".card");
+  cards.forEach(card=>{
+    const rect=card.getBoundingClientRect();
+    if(rect.top < window.innerHeight-50) card.classList.add("visible");
+  });
+}
+window.addEventListener("scroll", revealCards);
+
+/* INIT */
+renderMenu(menuItems);
+revealCards();
+
+</script>
+<script type="module">
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBfbndTF31elNjFWymh8lmdhBC5MMI2fbw",
+  authDomain: "mile-menu.firebaseapp.com",
+  projectId: "mile-menu",
+  storageBucket: "mile-menu.firebasestorage.app",
+  messagingSenderId: "1031672763123",
+  appId: "1:1031672763123:web:4d488d42b6db6fbf84dd86",
+  measurementId: "G-G7DN1R3NF8"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+// ====== SESSION DETECTION ======
+let urlParams = new URLSearchParams(window.location.search);
+let sessionId = urlParams.get("session");
+let currentGuest = null;
+const hostCart = [];
+const groupPanel = document.getElementById("groupPanel");
+const guestCartList = document.getElementById("guestCartList");
+const copyLinkBtn = document.getElementById("copyLinkBtn");
+
+if (!sessionId) {
+  // === HOST MODE ===
+  sessionId = "grp-" + Math.random().toString(36).substring(2,9);
+  set(ref(db, "orders/" + sessionId + "/host"), {status:"open", createdAt:Date.now()});
+  groupPanel.style.display="block";
+  copyLinkBtn.addEventListener("click", ()=>{
+    navigator.clipboard.writeText(window.location.origin + window.location.pathname + "?session=" + sessionId);
+    alert("Link session copied!\nShare this link to guests.");
+  });
+
+  const itemsRef = ref(db, "orders/" + sessionId + "/items");
+
+  // Real-time listener cart
+  onChildAdded(itemsRef, snap => {
+    const order = snap.val(); order.id = snap.key; hostCart.push(order); renderHostCart();
+  });
+  onChildChanged(itemsRef, snap => {
+    const updated = snap.val(); updated.id = snap.key;
+    const idx = hostCart.findIndex(i=>i.id===snap.key);
+    if(idx!==-1){ hostCart[idx] = updated; renderHostCart(); }
+  });
+  onChildRemoved(itemsRef, snap => {
+    const idx = hostCart.findIndex(i=>i.id===snap.key);
+    if(idx!==-1){ hostCart.splice(idx,1); renderHostCart(); }
+  });
+
+  function renderHostCart(){
+    guestCartList.innerHTML="";
+    let total=0;
+    hostCart.forEach(item=>{
+      let itemTotal=item.price*item.qty;
+      if(item.addOns && item.addOns.length>0) item.addOns.forEach(a=>itemTotal+=a.price*a.qty);
+      total += itemTotal;
+      let addonText="";
+      if(item.addOns && item.addOns.length>0){
+        addonText = item.addOns.map(a=>`<div style="font-size:12px;margin-left:10px;">+ ${a.name} (${a.qty})</div>`).join("");
+      }
+      guestCartList.innerHTML += `<div><strong>${item.name}</strong> x${item.qty} - $${itemTotal.toFixed(2)} ${addonText}</div>`;
+    });
+    guestCartList.innerHTML += `<hr><div style="font-weight:bold;">Total: $${total.toFixed(2)}</div>`;
+  }
+
+} else {
+  // === GUEST MODE ===
+  currentGuest = prompt("Masukkan nama kamu:");
+  if(!currentGuest){ alert("Nama diperlukan!"); throw "Guest name required"; }
+
+  const itemsRef = ref(db, "orders/" + sessionId + "/items");
+  const guestRef = ref(db, "orders/" + sessionId + "/guests/" + currentGuest);
+  set(guestRef, {done:false});
+
+  // Override addToCart
+  const originalAddToCart = addToCart;
+  addToCart = () => {
+    const orderData = {...currentItem, qty, note:"", addOns: []};
+    push(itemsRef, {...orderData, by: currentGuest});
+    modal.classList.remove("show");
+    alert("✅ Pesanan terkirim ke host!");
+  }
+  groupPanel.style.display="block";
+  copyLinkBtn.style.display="none";
+  guestCartList.innerHTML = `<em>Waiting for host to confirm order...</em>`;
+}
+// ======= GROUP ORDER BUTTON =======
+const groupOrderBtn = document.getElementById("groupOrderBtn");
+
+groupOrderBtn.addEventListener("click", () => {
+  // buat link session unik
+  let urlParams = new URLSearchParams(window.location.search);
+  let sessionId = urlParams.get("session");
+  if (!sessionId) {
+    sessionId = "grp-" + Math.random().toString(36).substring(2,9);
+  }
+  const shareLink = window.location.origin + window.location.pathname + "?session=" + sessionId;
+
+  // salin ke clipboard
+  navigator.clipboard.writeText(shareLink).then(() => {
+    alert("Link group order copied:\n" + shareLink);
+  }).catch(err => {
+    console.error("Failed to copy: ", err);
+    prompt("Copy this link manually:", shareLink);
+  });
+});
+
+
+</script>
+
+</body>
+</html>
